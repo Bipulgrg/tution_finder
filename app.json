@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Tuition Finder",
+    "slug": "tuition-finder",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#6C3FCF"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "backgroundColor": "#6C3FCF"
+    }
+  }
+}
