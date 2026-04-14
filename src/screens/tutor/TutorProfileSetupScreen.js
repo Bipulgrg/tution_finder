@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,15 +11,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
 import FilterChip from "../../components/FilterChip";
 import { subjects, gradeLevels, areas, availabilityOptions } from "../../data/mockTutors";
+import { apiRequest } from "../../api/client";
 
 const TutorProfileSetupScreen = () => {
-  const { userName } = useAuth();
+  const { userName, logout, user } = useAuth();
   const [step, setStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  const userEmail = user?.email || "";
 
   const [profile, setProfile] = useState({
     name: userName || "",
     phone: "",
-    email: "",
+    email: userEmail || "",
     subjects: [],
     grades: [],
     ratePerHour: "",
@@ -54,11 +57,56 @@ const TutorProfileSetupScreen = () => {
     }
   };
 
-  const handleNext = () => {
+  const subjectItems = useMemo(() => {
+    const grade = profile.grades[0] || "6-8";
+    return profile.subjects.map((s) => ({ subject: s, gradeRange: grade }));
+  }, [profile.subjects, profile.grades]);
+
+  const apiPayload = useMemo(() => {
+    const area = profile.areas.includes("Online") ? "Online" : profile.areas[0] || "Kathmandu";
+    return {
+      bio: profile.bio || "",
+      degree: profile.degree || "",
+      university: profile.university || "",
+      experienceYears: profile.experience ? Number(profile.experience) : 0,
+      hourlyRate: Number(profile.ratePerHour),
+      subjects: subjectItems,
+      availability: profile.availability,
+      area,
+      alsoTeachesOnline: profile.areas.includes("Online"),
+    };
+  }, [profile, subjectItems]);
+
+  const saveProfile = async () => {
+    setIsSaving(true);
+    try {
+      // Prefer update, fall back to create.
+      try {
+        await apiRequest("/api/tutors/profile", { method: "PUT", body: apiPayload });
+      } catch (e) {
+        if (e?.status === 404 || e?.status === 409) {
+          await apiRequest("/api/tutors/profile", { method: "POST", body: apiPayload });
+        } else {
+          throw e;
+        }
+      }
+      alert("Profile saved! Your profile will be reviewed/updated.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleNext = async () => {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      alert("Profile setup complete! You are now live.");
+      if (!canProceed()) return;
+      try {
+        await saveProfile();
+      } catch (e) {
+        console.error("Profile save failed:", e);
+        alert(e?.message || "Failed to save profile");
+      }
     }
   };
 
@@ -300,6 +348,25 @@ const TutorProfileSetupScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F5F5F7" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          backgroundColor: "#FFFFFF",
+          borderBottomWidth: 1,
+          borderBottomColor: "#E5E7EB",
+        }}
+      >
+        <Text style={{ fontSize: 18, fontWeight: "500", color: "#1A1A1A" }}>Tutor Profile</Text>
+        <TouchableOpacity onPress={logout} style={{ flexDirection: "row", alignItems: "center" }}>
+          <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+          <Text style={{ marginLeft: 6, color: "#EF4444", fontWeight: "500" }}>Logout</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
           {[1, 2, 3].map((s) => (
@@ -376,17 +443,17 @@ const TutorProfileSetupScreen = () => {
 
           <TouchableOpacity
             onPress={handleNext}
-            disabled={!canProceed()}
+            disabled={!canProceed() || isSaving}
             style={{
               flex: 1,
-              backgroundColor: canProceed() ? "#6C3FCF" : "#C4B5E0",
+              backgroundColor: canProceed() && !isSaving ? "#6C3FCF" : "#C4B5E0",
               borderRadius: 8,
               paddingVertical: 16,
               alignItems: "center",
             }}
           >
             <Text style={{ fontSize: 16, fontWeight: "500", color: "#FFFFFF" }}>
-              {step === 3 ? "Go Live" : "Next"}
+              {step === 3 ? (isSaving ? "Saving..." : "Save Profile") : "Next"}
             </Text>
           </TouchableOpacity>
         </View>

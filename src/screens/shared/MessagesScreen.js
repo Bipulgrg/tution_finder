@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,46 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AvatarInitials from "../../components/AvatarInitials";
-import { mockChats } from "../../data/mockTutors";
+import { apiRequest } from "../../api/client";
+import { useAuth } from "../../context/AuthContext";
 
 const MessagesScreen = ({ navigation }) => {
+  const { isLoggedIn, user } = useAuth();
+  const [conversations, setConversations] = useState([]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    apiRequest("/api/messages/conversations", { method: "GET" })
+      .then((res) => setConversations(Array.isArray(res?.data) ? res.data : []))
+      .catch((e) => console.error("Error loading conversations:", e));
+  }, [isLoggedIn]);
+
+  const mapped = useMemo(() => {
+    const me = user?._id;
+    return conversations.map((c) => {
+      const other = Array.isArray(c.participants)
+        ? c.participants.find((p) => (p?._id || p)?.toString?.() !== me?.toString?.())
+        : null;
+      const name = other?.name || "Conversation";
+      const initials = name
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((p) => p[0])
+        .join("")
+        .toUpperCase();
+      return {
+        id: c._id,
+        name,
+        initials,
+        lastMessage: c.lastMessage || "",
+        timestamp: c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleTimeString() : "",
+        unread: 0,
+        conversationId: c._id,
+      };
+    });
+  }, [conversations, user?._id]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F5F5F7" }}>
       <View
@@ -37,7 +74,7 @@ const MessagesScreen = ({ navigation }) => {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {mockChats.map((chat) => (
+        {mapped.map((chat) => (
           <TouchableOpacity
             key={chat.id}
             onPress={() => navigation.navigate("Chat", { chat })}

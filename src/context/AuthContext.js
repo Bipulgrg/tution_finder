@@ -137,6 +137,8 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     ...state,
+    userId: state.user?.id || state.user?._id || null,
+    userName: state.user?.name || "",
     register,
     verifyEmail,
     loginWithPassword,

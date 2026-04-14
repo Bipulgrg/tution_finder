@@ -13,7 +13,7 @@ import StatusPill from "../../components/StatusPill";
 import FilterChip from "../../components/FilterChip";
 
 const ScheduleScreen = () => {
-  const { confirmedBookings } = useBooking();
+  const { confirmedBookings, tutorConfirmBooking, refreshBookings } = useBooking();
   const [filter, setFilter] = useState("All");
 
   const filters = ["All", "Confirmed", "Pending"];
@@ -80,6 +80,7 @@ const ScheduleScreen = () => {
         {filteredBookings.length > 0 ? (
           filteredBookings.map((booking) => {
             const date = formatDate(booking.date);
+            const canConfirm = booking.status === "Pending";
             return (
               <View
                 key={booking.id}
@@ -150,7 +151,29 @@ const ScheduleScreen = () => {
                     >
                       {booking.time} · {booking.location}
                     </Text>
-                    <StatusPill status={booking.status} size="small" />
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                      <StatusPill status={booking.status} size="small" />
+                      {canConfirm && (
+                        <TouchableOpacity
+                          onPress={async () => {
+                            try {
+                              await tutorConfirmBooking(booking.id);
+                              await refreshBookings();
+                            } catch (e) {
+                              console.error("Failed to confirm booking:", e);
+                            }
+                          }}
+                          style={{
+                            backgroundColor: "#6C3FCF",
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Text style={{ color: "#FFFFFF", fontWeight: "500", fontSize: 12 }}>Confirm</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   </View>
                 </View>
               </View>

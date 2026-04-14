@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,55 +11,51 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AvatarInitials from "../../components/AvatarInitials";
-
-const mockMessages = [
-  {
-    id: "1",
-    text: "Hi, I'm interested in booking a math session for my son.",
-    sender: "user",
-    timestamp: "10:25 AM",
-  },
-  {
-    id: "2",
-    text: "Hello! I'd be happy to help. What grade is he in and what topics would you like to focus on?",
-    sender: "other",
-    timestamp: "10:27 AM",
-  },
-  {
-    id: "3",
-    text: "He's in grade 8. We need help with algebra and geometry.",
-    sender: "user",
-    timestamp: "10:28 AM",
-  },
-  {
-    id: "4",
-    text: "Perfect! I have extensive experience with those topics. I offer sessions on weekday evenings and weekends. Which would work better for you?",
-    sender: "other",
-    timestamp: "10:30 AM",
-  },
-];
+import { apiRequest } from "../../api/client";
+import { useAuth } from "../../context/AuthContext";
 
 const ChatScreen = ({ route }) => {
   const { chat } = route.params;
-  const [messages, setMessages] = useState(mockMessages);
+  const { isLoggedIn, user } = useAuth();
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
 
-  const handleSend = () => {
+  const conversationId = chat?.conversationId || chat?.id;
+
+  useEffect(() => {
+    if (!isLoggedIn || !conversationId) return;
+    apiRequest(`/api/messages/conversations/${conversationId}`, { method: "GET" })
+      .then((res) => setMessages(Array.isArray(res?.data) ? res.data : []))
+      .catch((e) => console.error("Error loading messages:", e));
+  }, [isLoggedIn, conversationId]);
+
+  const uiMessages = useMemo(() => {
+    const me = user?._id;
+    return messages.map((m) => ({
+      id: m._id,
+      text: m.content,
+      sender: m.senderId?.toString?.() === me?.toString?.() ? "user" : "other",
+      timestamp: m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : "",
+    }));
+  }, [messages, user?._id]);
+
+  const handleSend = async () => {
     if (!inputText.trim()) return;
 
-    const newMessage = {
-      id: Date.now().toString(),
-      text: inputText,
-      sender: "user",
-      timestamp: new Date().toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      }),
-    };
-
-    setMessages([...messages, newMessage]);
+    const content = inputText.trim();
     setInputText("");
+
+    if (!isLoggedIn || !conversationId) return;
+    try {
+      const res = await apiRequest(`/api/messages/conversations/${conversationId}/messages`, {
+        method: "POST",
+        body: { content },
+      });
+      const msg = res?.data?.message;
+      if (msg) setMessages((prev) => [...prev, msg]);
+    } catch (e) {
+      console.error("Error sending message:", e);
+    }
   };
 
   return (
@@ -72,7 +68,7 @@ const ChatScreen = ({ route }) => {
           contentContainerStyle={{ padding: 16 }}
           showsVerticalScrollIndicator={false}
         >
-          {messages.map((message, index) => (
+          {uiMessages.map((message) => (
             <View
               key={message.id}
               style={{

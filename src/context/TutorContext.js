@@ -1,14 +1,13 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { mockTutors } from "../data/mockTutors";
 import { apiRequest } from "../api/client";
 import { useAuth } from "./AuthContext";
 
 const TutorContext = createContext();
 
 const initialState = {
-  tutorList: mockTutors,
-  filteredList: mockTutors,
+  tutorList: [],
+  filteredList: [],
   savedTutors: [],
   activeFilters: {
     subjects: [],

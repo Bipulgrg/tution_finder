@@ -13,12 +13,21 @@ import { useBooking } from "../../context/BookingContext";
 import AvatarInitials from "../../components/AvatarInitials";
 import StatusPill from "../../components/StatusPill";
 import SectionHeader from "../../components/SectionHeader";
-import { mockBookings } from "../../data/mockTutors";
+import { apiRequest } from "../../api/client";
 
 const TutorDashboardScreen = ({ navigation }) => {
   const { userName } = useAuth();
   const { confirmedBookings } = useBooking();
   const [isOnline, setIsOnline] = useState(true);
+
+  const onToggleOnline = async (next) => {
+    setIsOnline(next);
+    try {
+      await apiRequest("/api/tutors/profile/status", { method: "PUT", body: { isOnline: next } });
+    } catch (e) {
+      console.error("Failed to update online status:", e);
+    }
+  };
 
   const thisWeekEarnings = confirmedBookings
     .filter((b) => b.status === "Confirmed")
@@ -28,7 +37,7 @@ const TutorDashboardScreen = ({ navigation }) => {
     (b) => b.status === "Confirmed"
   ).length;
 
-  const allBookings = [...mockBookings, ...confirmedBookings].slice(0, 5);
+  const allBookings = [...confirmedBookings].slice(0, 5);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F5F5F7" }}>
@@ -82,7 +91,7 @@ const TutorDashboardScreen = ({ navigation }) => {
             </Text>
             <Switch
               value={isOnline}
-              onValueChange={setIsOnline}
+              onValueChange={onToggleOnline}
               trackColor={{ false: "#E5E7EB", true: "#EAF3DE" }}
               thumbColor={isOnline ? "#3B6D11" : "#9CA3AF"}
             />

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,17 +11,24 @@ import { useTutor } from "../../context/TutorContext";
 import AvatarInitials from "../../components/AvatarInitials";
 import StarRating from "../../components/StarRating";
 import FilterChip from "../../components/FilterChip";
-import { mockReviews } from "../../data/mockTutors";
+import { apiRequest } from "../../api/client";
 
 const TutorProfileScreen = ({ route, navigation }) => {
   const { tutor } = route.params;
   const { toggleSaveTutor, isTutorSaved } = useTutor();
+  const [reviews, setReviews] = useState([]);
 
   const isSaved = isTutorSaved(tutor.id);
 
   const handleBookNow = () => {
     navigation.navigate("Booking", { tutor });
   };
+
+  useEffect(() => {
+    apiRequest(`/api/reviews/tutor/${tutor.id}`, { method: "GET" })
+      .then((res) => setReviews(Array.isArray(res?.data) ? res.data : []))
+      .catch((e) => console.error("Error loading reviews:", e));
+  }, [tutor.id]);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F7" }}>
@@ -327,9 +334,9 @@ const TutorProfileScreen = ({ route, navigation }) => {
           >
             Reviews
           </Text>
-          {mockReviews.map((review) => (
+          {reviews.map((review) => (
             <View
-              key={review.id}
+              key={review._id}
               style={{
                 backgroundColor: "#FFFFFF",
                 borderRadius: 12,
@@ -352,9 +359,9 @@ const TutorProfileScreen = ({ route, navigation }) => {
                     color: "#1A1A1A",
                   }}
                 >
-                  {review.reviewerName}
+                  {review?.parentId?.name || "Parent"}
                 </Text>
-                <StarRating rating={review.rating} size={12} />
+                <StarRating rating={review.rating || 0} size={12} />
               </View>
               <Text
                 style={{
@@ -363,7 +370,7 @@ const TutorProfileScreen = ({ route, navigation }) => {
                   lineHeight: 20,
                 }}
               >
-                {review.comment}
+                {review.comment || ""}
               </Text>
             </View>
           ))}

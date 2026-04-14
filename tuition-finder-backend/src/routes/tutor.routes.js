@@ -14,7 +14,6 @@ const {
 const router = express.Router();
 
 router.get("/", controller.listTutors);
-router.get("/:tutorId", controller.getTutor);
 
 router.post("/profile", authMiddleware, requireRole("tutor"), validate(profileCreateSchema), controller.createProfile);
 router.put("/profile", authMiddleware, requireRole("tutor"), validate(profileUpdateSchema), controller.updateProfile);
@@ -26,5 +25,8 @@ router.put(
   controller.toggleOnline
 );
 router.get("/profile/stats", authMiddleware, requireRole("tutor"), controller.stats);
+
+// Keep this last so it doesn't swallow "/profile/*"
+router.get("/:tutorId", controller.getTutor);
 
 module.exports = router;

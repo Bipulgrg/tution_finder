@@ -163,7 +163,7 @@ const BookingConfirmedScreen = ({ route, navigation }) => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => navigation.navigate("Home")}
+          onPress={() => navigation.navigate("ParentTabs", { screen: "Home" })}
           style={{
             backgroundColor: "#6C3FCF",
             borderRadius: 8,
