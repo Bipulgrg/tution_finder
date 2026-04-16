@@ -24,16 +24,30 @@ async function me(req, res, next) {
 
 async function updateMe(req, res, next) {
   try {
-    const { name } = req.body;
-    if (!name || typeof name !== "string") {
-      throw new ApiError(400, "VALIDATION_ERROR", "Name is required");
+    const { name, phone } = req.body;
+
+    const hasName = typeof name === "string" && name.trim().length > 0;
+    const hasPhone = typeof phone === "string" && phone.trim().length > 0;
+
+    if (!hasName && !hasPhone) {
+      throw new ApiError(400, "VALIDATION_ERROR", "Provide at least name or phone");
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      { $set: { name: name.trim() } },
-      { new: true }
-    ).select("-password -refreshToken");
+    if (hasName && typeof name !== "string") {
+      throw new ApiError(400, "VALIDATION_ERROR", "Name must be a string");
+    }
+
+    if (hasPhone && phone.trim().length < 7) {
+      throw new ApiError(400, "VALIDATION_ERROR", "Phone number is too short");
+    }
+
+    const $set = {};
+    if (hasName) $set.name = name.trim();
+    if (hasPhone) $set.phone = phone.trim();
+
+    const user = await User.findByIdAndUpdate(req.user._id, { $set }, { new: true }).select(
+      "-password -refreshToken"
+    );
 
     return res.json(apiResponse({ data: { user } }));
   } catch (err) {

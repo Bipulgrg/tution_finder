@@ -39,6 +39,11 @@ const authReducer = (state, action) => {
         ...state,
         isLoading: action.payload,
       };
+    case "UPDATE_USER":
+      return {
+        ...state,
+        user: action.payload,
+      };
     default:
       return state;
   }
@@ -71,10 +76,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async ({ name, email, password, role }) => {
+  const register = async ({ name, email, password, role, phone }) => {
     await apiRequest("/api/auth/register", {
       method: "POST",
-      body: { name, email, password, role },
+      body: { name, email, password, role, phone },
     });
   };
 
@@ -135,6 +140,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateCurrentUser = async (nextUser) => {
+    await AsyncStorage.setItem("user", JSON.stringify(nextUser));
+    dispatch({ type: "UPDATE_USER", payload: nextUser });
+  };
+
   const value = {
     ...state,
     userId: state.user?.id || state.user?._id || null,
@@ -143,6 +153,7 @@ export const AuthProvider = ({ children }) => {
     verifyEmail,
     loginWithPassword,
     logout,
+    updateCurrentUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

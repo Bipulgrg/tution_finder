@@ -15,6 +15,7 @@ const AuthScreen = () => {
   const { register, verifyEmail, loginWithPassword } = useAuth();
   const [selectedRole, setSelectedRole] = useState(null);
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -35,7 +36,7 @@ const AuthScreen = () => {
 
       if (!isOtpStep) {
         if (!selectedRole) throw new Error("Please select a role");
-        await register({ name, email, password, role: selectedRole });
+        await register({ name, email, password, role: selectedRole, phone });
         setIsOtpStep(true);
         return;
       }
@@ -192,6 +193,38 @@ const AuthScreen = () => {
               placeholder="Enter your name"
               placeholderTextColor="#9CA3AF"
               autoCapitalize="words"
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderRadius: 8,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                fontSize: 16,
+                color: "#1A1A1A",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+              }}
+            />
+          </View>
+        )}
+
+        {!isLogin && !isOtpStep && (
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "500",
+                color: "#1A1A1A",
+                marginBottom: 8,
+              }}
+            >
+              Phone Number
+            </Text>
+            <TextInput
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="98XXXXXXXX"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="phone-pad"
               style={{
                 backgroundColor: "#FFFFFF",
                 borderRadius: 8,

@@ -161,24 +161,38 @@ const MessagesScreen = ({ navigation }) => {
           </TouchableOpacity>
         ))}
 
-        <View
-          style={{
-            alignItems: "center",
-            justifyContent: "center",
-            paddingVertical: 40,
-          }}
-        >
-          <Ionicons name="chatbubbles-outline" size={48} color="#9CA3AF" />
-          <Text
+        {mapped.length === 0 && (
+          <View
             style={{
-              fontSize: 14,
-              color: "#6B7280",
-              marginTop: 12,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 40,
             }}
           >
-            More conversations will appear here
-          </Text>
-        </View>
+            <Ionicons name="chatbubbles-outline" size={48} color="#9CA3AF" />
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "500",
+                color: "#1A1A1A",
+                marginTop: 12,
+              }}
+            >
+              No conversations yet
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#6B7280",
+                marginTop: 8,
+                textAlign: "center",
+                lineHeight: 20,
+              }}
+            >
+              Start a chat from a tutor profile and it will appear here.
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

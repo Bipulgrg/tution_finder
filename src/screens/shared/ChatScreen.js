@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   View,
   Text,
   ScrollView,
@@ -14,19 +15,33 @@ import AvatarInitials from "../../components/AvatarInitials";
 import { apiRequest } from "../../api/client";
 import { useAuth } from "../../context/AuthContext";
 
-const ChatScreen = ({ route }) => {
-  const { chat } = route.params;
+const ChatScreen = ({ route, navigation }) => {
+  const chat = route?.params?.chat || {};
   const { isLoggedIn, user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
 
   const conversationId = chat?.conversationId || chat?.id;
 
+  useLayoutEffect(() => {
+    if (chat?.name) {
+      navigation.setOptions({ title: chat.name });
+    }
+  }, [chat?.name, navigation]);
+
   useEffect(() => {
-    if (!isLoggedIn || !conversationId) return;
+    if (!isLoggedIn || !conversationId) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
     apiRequest(`/api/messages/conversations/${conversationId}`, { method: "GET" })
       .then((res) => setMessages(Array.isArray(res?.data) ? res.data : []))
-      .catch((e) => console.error("Error loading messages:", e));
+      .catch((e) => console.error("Error loading messages:", e))
+      .finally(() => setIsLoading(false));
   }, [isLoggedIn, conversationId]);
 
   const uiMessages = useMemo(() => {
@@ -40,12 +55,13 @@ const ChatScreen = ({ route }) => {
   }, [messages, user?._id]);
 
   const handleSend = async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || isSending) return;
 
     const content = inputText.trim();
     setInputText("");
 
     if (!isLoggedIn || !conversationId) return;
+    setIsSending(true);
     try {
       const res = await apiRequest(`/api/messages/conversations/${conversationId}/messages`, {
         method: "POST",
@@ -55,6 +71,9 @@ const ChatScreen = ({ route }) => {
       if (msg) setMessages((prev) => [...prev, msg]);
     } catch (e) {
       console.error("Error sending message:", e);
+      setInputText(content);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -64,6 +83,13 @@ const ChatScreen = ({ route }) => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
+        {isLoading ? (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator size="large" color="#6C3FCF" />
+            <Text style={{ marginTop: 12, color: "#6B7280" }}>Loading conversation...</Text>
+          </View>
+        ) : (
+          <>
         <ScrollView
           contentContainerStyle={{ padding: 16 }}
           showsVerticalScrollIndicator={false}
@@ -120,6 +146,25 @@ const ChatScreen = ({ route }) => {
               </View>
             </View>
           ))}
+          {uiMessages.length === 0 && (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 60 }}>
+              <Ionicons name="chatbubble-ellipses-outline" size={48} color="#9CA3AF" />
+              <Text style={{ fontSize: 16, fontWeight: "500", color: "#111827", marginTop: 12 }}>
+                Start the conversation
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#6B7280",
+                  marginTop: 8,
+                  textAlign: "center",
+                  lineHeight: 20,
+                }}
+              >
+                Send your first message to {chat?.name || "this tutor"}.
+              </Text>
+            </View>
+          )}
         </ScrollView>
 
         <View
@@ -152,24 +197,30 @@ const ChatScreen = ({ route }) => {
           />
           <TouchableOpacity
             onPress={handleSend}
-            disabled={!inputText.trim()}
+            disabled={!inputText.trim() || isSending}
             style={{
               width: 44,
               height: 44,
               borderRadius: 22,
-              backgroundColor: inputText.trim() ? "#6C3FCF" : "#E5E7EB",
+              backgroundColor: inputText.trim() && !isSending ? "#6C3FCF" : "#E5E7EB",
               justifyContent: "center",
               alignItems: "center",
               marginLeft: 10,
             }}
           >
-            <Ionicons
-              name="send"
-              size={20}
-              color={inputText.trim() ? "#FFFFFF" : "#9CA3AF"}
-            />
+            {isSending ? (
+              <ActivityIndicator size="small" color="#9CA3AF" />
+            ) : (
+              <Ionicons
+                name="send"
+                size={20}
+                color={inputText.trim() ? "#FFFFFF" : "#9CA3AF"}
+              />
+            )}
           </TouchableOpacity>
         </View>
+          </>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

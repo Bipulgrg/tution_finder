@@ -19,6 +19,7 @@ function userPayload(user) {
   return {
     id: user._id,
     name: user.name,
+    phone: user.phone || null,
     email: user.email,
     role: user.role,
     profilePhotoUrl: user.profilePhotoUrl || null,
@@ -27,7 +28,7 @@ function userPayload(user) {
 
 async function register(req, res, next) {
   try {
-    const { name, email, password, role } = req.validated.body;
+    const { name, phone, email, password, role } = req.validated.body;
     const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) {
       throw new ApiError(409, "EMAIL_ALREADY_EXISTS", "Email already exists");
@@ -36,6 +37,7 @@ async function register(req, res, next) {
     const passwordHash = await hashPassword(password);
     const user = await User.create({
       name,
+      phone: phone || null,
       email: email.toLowerCase(),
       password: passwordHash,
       role,

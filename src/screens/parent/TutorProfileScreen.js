@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  ActivityIndicator,
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTutor } from "../../context/TutorContext";
@@ -17,6 +19,9 @@ const TutorProfileScreen = ({ route, navigation }) => {
   const { tutor } = route.params;
   const { toggleSaveTutor, isTutorSaved } = useTutor();
   const [reviews, setReviews] = useState([]);
+  const [isStartingChat, setIsStartingChat] = useState(false);
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
 
   const isSaved = isTutorSaved(tutor.id);
 
@@ -29,6 +34,47 @@ const TutorProfileScreen = ({ route, navigation }) => {
       .then((res) => setReviews(Array.isArray(res?.data) ? res.data : []))
       .catch((e) => console.error("Error loading reviews:", e));
   }, [tutor.id]);
+
+  useEffect(() => {
+    if (!tutor?.id) return;
+    apiRequest(`/api/tutors/${tutor.id}`, { method: "GET" })
+      .then((res) => {
+        setContactEmail(res?.data?.user?.email || "");
+        setContactPhone(res?.data?.user?.phone || "");
+      })
+      .catch((e) => console.error("Error loading tutor contact:", e));
+  }, [tutor?.id]);
+
+  const handleMessageTutor = async () => {
+    if (isStartingChat) return;
+
+    setIsStartingChat(true);
+    try {
+      const res = await apiRequest("/api/messages/conversations", {
+        method: "POST",
+        body: { otherUserId: tutor.id },
+      });
+
+      const conversation = res?.data?.conversation;
+      if (!conversation?._id) {
+        throw new Error("Conversation could not be created");
+      }
+
+      navigation.navigate("Chat", {
+        chat: {
+          id: conversation._id,
+          conversationId: conversation._id,
+          name: tutor.name,
+          initials: tutor.initials,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to start conversation:", error);
+      Alert.alert("Unable to open chat", error?.message || "Please try again in a moment.");
+    } finally {
+      setIsStartingChat(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F7" }}>
@@ -332,6 +378,78 @@ const TutorProfileScreen = ({ route, navigation }) => {
               marginBottom: 12,
             }}
           >
+            Contact
+          </Text>
+
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: 12,
+              padding: 16,
+              borderWidth: 1,
+              borderColor: "#E5E7EB",
+              marginBottom: 20,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+              <Ionicons name="mail-outline" size={20} color="#6B7280" />
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#1A1A1A",
+                  marginLeft: 10,
+                  flex: 1,
+                }}
+              >
+                {contactEmail ? contactEmail : "Email not available"}
+              </Text>
+              {contactEmail ? (
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(`mailto:${contactEmail}`)}
+                  activeOpacity={0.8}
+                  style={{
+                    backgroundColor: "#EEF2FF",
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 13, color: "#6C3FCF", fontWeight: "500" }}>Email</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="call-outline" size={20} color="#6B7280" />
+              <Text style={{ fontSize: 14, color: "#1A1A1A", marginLeft: 10 }}>
+                {contactPhone ? contactPhone : "Phone not available yet"}
+              </Text>
+              {contactPhone ? (
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(`tel:${contactPhone}`)}
+                  activeOpacity={0.8}
+                  style={{
+                    backgroundColor: "#EEF2FF",
+                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 8,
+                    marginLeft: 10,
+                  }}
+                >
+                  <Text style={{ fontSize: 13, color: "#6C3FCF", fontWeight: "500" }}>Call</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "500",
+              color: "#1A1A1A",
+              marginBottom: 12,
+            }}
+          >
             Reviews
           </Text>
           {reviews.map((review) => (
@@ -412,6 +530,29 @@ const TutorProfileScreen = ({ route, navigation }) => {
             size={28}
             color={isSaved ? "#FFFFFF" : "#6B7280"}
           />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={handleMessageTutor}
+          activeOpacity={0.8}
+          disabled={isStartingChat}
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 8,
+            backgroundColor: "#FFFFFF",
+            justifyContent: "center",
+            alignItems: "center",
+            marginRight: 12,
+            borderWidth: 1,
+            borderColor: "#E5E7EB",
+          }}
+        >
+          {isStartingChat ? (
+            <ActivityIndicator size="small" color="#6C3FCF" />
+          ) : (
+            <Ionicons name="chatbubble-outline" size={24} color="#6C3FCF" />
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity

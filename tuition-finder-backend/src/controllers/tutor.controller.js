@@ -127,7 +127,7 @@ async function getTutor(req, res, next) {
     const profile = await TutorProfile.findOne({ userId: tutorId, isApproved: true }).lean();
     if (!profile) throw new ApiError(404, "TUTOR_NOT_FOUND", "Tutor not found");
 
-    const user = await User.findById(tutorId).select("name profilePhotoUrl role");
+    const user = await User.findById(tutorId).select("name profilePhotoUrl role email phone");
     if (!user) throw new ApiError(404, "USER_NOT_FOUND", "User not found");
 
     const reviews = await Review.find({ tutorId })

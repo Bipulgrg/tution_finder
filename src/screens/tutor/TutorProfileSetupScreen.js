@@ -14,14 +14,14 @@ import { subjects, gradeLevels, areas, availabilityOptions } from "../../data/mo
 import { apiRequest } from "../../api/client";
 
 const TutorProfileSetupScreen = () => {
-  const { userName, logout, user } = useAuth();
+  const { userName, logout, user, updateCurrentUser } = useAuth();
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const userEmail = user?.email || "";
 
   const [profile, setProfile] = useState({
     name: userName || "",
-    phone: "",
+    phone: user?.phone || "",
     email: userEmail || "",
     subjects: [],
     grades: [],
@@ -89,6 +89,17 @@ const TutorProfileSetupScreen = () => {
         } else {
           throw e;
         }
+      }
+      // Also keep user's phone in sync so parents can contact tutors.
+      const updatedMe = await apiRequest("/api/users/me", {
+        method: "PUT",
+        body: {
+          name: profile.name || userName,
+          phone: profile.phone,
+        },
+      });
+      if (updatedMe?.data?.user) {
+        await updateCurrentUser(updatedMe.data.user);
       }
       alert("Profile saved! Your profile will be reviewed/updated.");
     } finally {
