@@ -144,6 +144,26 @@ export const BookingProvider = ({ children }) => {
     return b;
   };
 
+  const tutorUnconfirmBooking = async (bookingId) => {
+    const res = await apiRequest(`/api/bookings/${bookingId}/unconfirm`, { method: "PUT" });
+    const b = res?.data?.booking;
+    dispatch({
+      type: "UPDATE_BOOKING_STATUS",
+      payload: { bookingId: b?._id || bookingId, status: "Pending" },
+    });
+    return b;
+  };
+
+  const tutorCompleteBooking = async (bookingId) => {
+    const res = await apiRequest(`/api/bookings/${bookingId}/complete`, { method: "PUT" });
+    const b = res?.data?.booking;
+    dispatch({
+      type: "UPDATE_BOOKING_STATUS",
+      payload: { bookingId: b?._id || bookingId, status: "Completed" },
+    });
+    return b;
+  };
+
   const updateBookingStatus = (bookingId, status) => {
     dispatch({ type: "UPDATE_BOOKING_STATUS", payload: { bookingId, status } });
   };
@@ -159,6 +179,8 @@ export const BookingProvider = ({ children }) => {
     clearPendingBooking,
     confirmBooking,
     tutorConfirmBooking,
+    tutorUnconfirmBooking,
+    tutorCompleteBooking,
     updateBookingStatus,
     getTutorBookings,
   };

@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import ParentHomeScreen from "../screens/parent/ParentHomeScreen";
 import SearchScreen from "../screens/parent/SearchScreen";
 import SavedTutorsScreen from "../screens/parent/SavedTutorsScreen";
+import MyBookingsScreen from "../screens/parent/MyBookingsScreen";
 import MessagesScreen from "../screens/shared/MessagesScreen";
 import ParentProfileScreen from "../screens/parent/ParentProfileScreen";
 
@@ -23,6 +24,8 @@ const ParentTabNavigator = () => {
             iconName = focused ? "search" : "search-outline";
           } else if (route.name === "Saved") {
             iconName = focused ? "heart" : "heart-outline";
+          } else if (route.name === "Bookings") {
+            iconName = focused ? "calendar" : "calendar-outline";
           } else if (route.name === "Messages") {
             iconName = focused ? "chatbubble" : "chatbubble-outline";
           } else if (route.name === "Profile") {
@@ -50,6 +53,7 @@ const ParentTabNavigator = () => {
       <Tab.Screen name="Home" component={ParentHomeScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
       <Tab.Screen name="Saved" component={SavedTutorsScreen} />
+      <Tab.Screen name="Bookings" component={MyBookingsScreen} />
       <Tab.Screen name="Messages" component={MessagesScreen} />
       <Tab.Screen name="Profile" component={ParentProfileScreen} />
     </Tab.Navigator>

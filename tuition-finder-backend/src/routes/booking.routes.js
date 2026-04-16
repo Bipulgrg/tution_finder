@@ -13,6 +13,7 @@ router.post("/", authMiddleware, requireRole("parent"), validate(createBookingSc
 router.get("/", authMiddleware, controller.listBookings);
 router.get("/:bookingId", authMiddleware, controller.getBooking);
 router.put("/:bookingId/confirm", authMiddleware, requireRole("tutor"), controller.confirmBooking);
+router.put("/:bookingId/unconfirm", authMiddleware, requireRole("tutor"), controller.unconfirmBooking);
 router.put("/:bookingId/cancel", authMiddleware, controller.cancelBooking);
 router.put("/:bookingId/complete", authMiddleware, requireRole("tutor"), controller.completeBooking);
 

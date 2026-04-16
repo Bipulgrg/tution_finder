@@ -137,6 +137,36 @@ async function confirmBooking(req, res, next) {
   }
 }
 
+async function unconfirmBooking(req, res, next) {
+  try {
+    const { bookingId } = req.params;
+    const booking = await Booking.findById(bookingId);
+    if (!booking) throw new ApiError(404, "BOOKING_NOT_FOUND", "Booking not found");
+    if (booking.tutorId.toString() !== req.user._id.toString()) {
+      throw new ApiError(403, "BOOKING_UNAUTHORIZED", "Not allowed");
+    }
+
+    if (booking.status !== "confirmed") {
+      throw new ApiError(400, "INVALID_STATUS", "Only confirmed bookings can be reverted to pending");
+    }
+
+    booking.status = "pending";
+    await booking.save();
+
+    await Notification.create({
+      userId: booking.parentId,
+      type: "booking",
+      title: "Booking status updated",
+      body: `Your booking (${booking.bookingRef}) is now pending`,
+      data: { bookingId: booking._id },
+    });
+
+    return res.json(apiResponse({ data: { booking } }));
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function cancelBooking(req, res, next) {
   try {
     const { bookingId } = req.params;
@@ -203,6 +233,7 @@ module.exports = {
   listBookings,
   getBooking,
   confirmBooking,
+  unconfirmBooking,
   cancelBooking,
   completeBooking,
 };

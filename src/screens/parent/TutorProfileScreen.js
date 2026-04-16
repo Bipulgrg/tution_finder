@@ -9,6 +9,8 @@ import {
   Linking,
   useWindowDimensions,
   Platform,
+  TextInput,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTutor } from "../../context/TutorContext";
@@ -24,6 +26,14 @@ const TutorProfileScreen = ({ route, navigation }) => {
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+
+  // Review form state
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [completedBookings, setCompletedBookings] = useState([]);
+  const [hasReviewed, setHasReviewed] = useState(false);
 
   const isSaved = tutor?.id ? isTutorSaved(tutor.id) : false;
 
@@ -64,6 +74,90 @@ const TutorProfileScreen = ({ route, navigation }) => {
       })
       .catch((e) => console.error("Error loading tutor contact:", e));
   }, [tutor?.id]);
+
+  // Fetch completed bookings to check if user can review
+  useEffect(() => {
+    if (!tutor?.id) return;
+    apiRequest(`/api/bookings?status=completed`, { method: "GET" })
+      .then((res) => {
+        const bookings = res?.data?.items || [];
+        const tutorBookings = bookings.filter(b => b.tutorId === tutor.id || b.tutorId?._id === tutor.id);
+        setCompletedBookings(tutorBookings);
+        // Check if already reviewed any of these bookings
+        const reviewed = reviews.some(r =>
+          tutorBookings.some(b => String(b._id) === String(r.bookingId))
+        );
+        setHasReviewed(reviewed);
+      })
+      .catch((e) => console.error("Error loading bookings:", e));
+  }, [tutor?.id, reviews]);
+
+  const handleSubmitReview = async () => {
+    if (reviewRating === 0) {
+      Alert.alert("Rating Required", "Please select a star rating");
+      return;
+    }
+    if (!reviewComment.trim()) {
+      Alert.alert("Comment Required", "Please write a review comment");
+      return;
+    }
+    if (completedBookings.length === 0) {
+      Alert.alert("Cannot Review", "You need to complete a session with this tutor before reviewing");
+      return;
+    }
+
+    const bookingToReview = completedBookings.find(b =>
+      !reviews.some(r => String(r.bookingId) === String(b._id))
+    );
+
+    if (!bookingToReview) {
+      Alert.alert("Already Reviewed", "You have already reviewed this tutor");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      const res = await apiRequest("/api/reviews", {
+        method: "POST",
+        body: {
+          bookingId: bookingToReview._id,
+          rating: reviewRating,
+          comment: reviewComment.trim(),
+        },
+      });
+
+      if (res?.data?.review) {
+        setReviews([res.data.review, ...reviews]);
+        setHasReviewed(true);
+        setShowReviewModal(false);
+        setReviewRating(0);
+        setReviewComment("");
+        Alert.alert("Success", "Your review has been submitted!");
+      }
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      Alert.alert("Error", error?.message || "Failed to submit review. Please try again.");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const StarRatingInput = ({ rating, onRate }) => {
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <TouchableOpacity key={star} onPress={() => onRate(star)} activeOpacity={0.8}>
+            <Ionicons
+              name={star <= rating ? "star" : "star-outline"}
+              size={32}
+              color={star <= rating ? "#F59E0B" : "#E5E7EB"}
+              style={{ marginRight: 8 }}
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
 
   const handleMessageTutor = async () => {
     if (isStartingChat) return;
@@ -469,16 +563,41 @@ const TutorProfileScreen = ({ route, navigation }) => {
             </View>
           </View>
 
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "500",
-              color: "#1A1A1A",
-              marginBottom: 12,
-            }}
-          >
-            Reviews
-          </Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "500",
+                color: "#1A1A1A",
+              }}
+            >
+              Reviews
+            </Text>
+            {completedBookings.length > 0 && !hasReviewed && (
+              <TouchableOpacity
+                onPress={() => setShowReviewModal(true)}
+                activeOpacity={0.8}
+                style={{
+                  backgroundColor: "#EEF2FF",
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderWidth: 1,
+                  borderColor: "#6C3FCF",
+                }}
+              >
+                <Text style={{ fontSize: 13, color: "#6C3FCF", fontWeight: "500" }}>Write a Review</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {reviews.length === 0 && (
+            <View style={{ backgroundColor: "#FFFFFF", borderRadius: 12, padding: 20, marginBottom: 12, alignItems: "center" }}>
+              <Ionicons name="chatbubble-outline" size={32} color="#9CA3AF" style={{ marginBottom: 8 }} />
+              <Text style={{ fontSize: 14, color: "#6B7280", textAlign: "center" }}>
+                No reviews yet. Be the first to review!
+              </Text>
+            </View>
+          )}
           {reviews.map((review) => (
             <View
               key={review._id}
@@ -521,6 +640,111 @@ const TutorProfileScreen = ({ route, navigation }) => {
           ))}
         </View>
       </ScrollView>
+
+      {/* Review Modal */}
+      <Modal
+        visible={showReviewModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowReviewModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "flex-end",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: 24,
+              maxHeight: "80%",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <Text style={{ fontSize: 20, fontWeight: "600", color: "#1A1A1A" }}>
+                Write a Review
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowReviewModal(false)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ fontSize: 14, color: "#6B7280", marginBottom: 8 }}>
+              How would you rate {tutor.name}?
+            </Text>
+
+            <View style={{ alignItems: "center", marginBottom: 20 }}>
+              <StarRatingInput rating={reviewRating} onRate={setReviewRating} />
+            </View>
+
+            <Text style={{ fontSize: 14, color: "#6B7280", marginBottom: 8 }}>
+              Share your experience
+            </Text>
+            <TextInput
+              style={{
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+                borderRadius: 12,
+                padding: 16,
+                fontSize: 14,
+                color: "#1A1A1A",
+                minHeight: 120,
+                textAlignVertical: "top",
+                marginBottom: 20,
+              }}
+              multiline={true}
+              maxLength={500}
+              placeholder="Tell other parents about your experience with this tutor..."
+              placeholderTextColor="#9CA3AF"
+              value={reviewComment}
+              onChangeText={setReviewComment}
+            />
+            <Text style={{ fontSize: 12, color: "#9CA3AF", textAlign: "right", marginBottom: 20 }}>
+              {reviewComment.length}/500
+            </Text>
+
+            <TouchableOpacity
+              onPress={handleSubmitReview}
+              disabled={isSubmittingReview || reviewRating === 0}
+              activeOpacity={0.8}
+              style={{
+                backgroundColor: reviewRating === 0 ? "#E5E7EB" : "#6C3FCF",
+                borderRadius: 12,
+                paddingVertical: 16,
+                alignItems: "center",
+              }}
+            >
+              {isSubmittingReview ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "500",
+                    color: reviewRating === 0 ? "#9CA3AF" : "#FFFFFF",
+                  }}
+                >
+                  Submit Review
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <View
         style={{

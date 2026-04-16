@@ -13,7 +13,7 @@ import StatusPill from "../../components/StatusPill";
 import FilterChip from "../../components/FilterChip";
 
 const ScheduleScreen = () => {
-  const { confirmedBookings, tutorConfirmBooking, refreshBookings } = useBooking();
+  const { confirmedBookings, tutorConfirmBooking, tutorUnconfirmBooking, tutorCompleteBooking, refreshBookings } = useBooking();
   const [filter, setFilter] = useState("All");
 
   const filters = ["All", "Confirmed", "Pending"];
@@ -81,6 +81,8 @@ const ScheduleScreen = () => {
           filteredBookings.map((booking) => {
             const date = formatDate(booking.date);
             const canConfirm = booking.status === "Pending";
+            const canUnconfirm = booking.status === "Confirmed";
+            const canComplete = booking.status === "Confirmed";
             return (
               <View
                 key={booking.id}
@@ -153,26 +155,74 @@ const ScheduleScreen = () => {
                     </Text>
                     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                       <StatusPill status={booking.status} size="small" />
-                      {canConfirm && (
-                        <TouchableOpacity
-                          onPress={async () => {
-                            try {
-                              await tutorConfirmBooking(booking.id);
-                              await refreshBookings();
-                            } catch (e) {
-                              console.error("Failed to confirm booking:", e);
-                            }
-                          }}
-                          style={{
-                            backgroundColor: "#6C3FCF",
-                            paddingHorizontal: 12,
-                            paddingVertical: 8,
-                            borderRadius: 8,
-                          }}
-                        >
-                          <Text style={{ color: "#FFFFFF", fontWeight: "500", fontSize: 12 }}>Confirm</Text>
-                        </TouchableOpacity>
-                      )}
+                      <View style={{ flexDirection: "row" }}>
+                        {canComplete && (
+                          <TouchableOpacity
+                            onPress={async () => {
+                              try {
+                                await tutorCompleteBooking(booking.id);
+                                await refreshBookings();
+                              } catch (e) {
+                                console.error("Failed to complete booking:", e);
+                              }
+                            }}
+                            style={{
+                              backgroundColor: "#EAF3DE",
+                              paddingHorizontal: 10,
+                              paddingVertical: 6,
+                              borderRadius: 6,
+                              marginRight: 6,
+                              borderWidth: 1,
+                              borderColor: "#3B6D11",
+                            }}
+                          >
+                            <Text style={{ color: "#3B6D11", fontWeight: "500", fontSize: 11 }}>Complete</Text>
+                          </TouchableOpacity>
+                        )}
+                        {canUnconfirm && (
+                          <TouchableOpacity
+                            onPress={async () => {
+                              try {
+                                await tutorUnconfirmBooking(booking.id);
+                                await refreshBookings();
+                              } catch (e) {
+                                console.error("Failed to unconfirm booking:", e);
+                              }
+                            }}
+                            style={{
+                              backgroundColor: "#FEF2F2",
+                              paddingHorizontal: 10,
+                              paddingVertical: 6,
+                              borderRadius: 6,
+                              marginRight: 6,
+                              borderWidth: 1,
+                              borderColor: "#FECACA",
+                            }}
+                          >
+                            <Text style={{ color: "#DC2626", fontWeight: "500", fontSize: 11 }}>Revert</Text>
+                          </TouchableOpacity>
+                        )}
+                        {canConfirm && (
+                          <TouchableOpacity
+                            onPress={async () => {
+                              try {
+                                await tutorConfirmBooking(booking.id);
+                                await refreshBookings();
+                              } catch (e) {
+                                console.error("Failed to confirm booking:", e);
+                              }
+                            }}
+                            style={{
+                              backgroundColor: "#6C3FCF",
+                              paddingHorizontal: 10,
+                              paddingVertical: 6,
+                              borderRadius: 6,
+                            }}
+                          >
+                            <Text style={{ color: "#FFFFFF", fontWeight: "500", fontSize: 11 }}>Confirm</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
                   </View>
                 </View>
