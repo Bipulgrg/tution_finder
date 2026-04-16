@@ -13,7 +13,7 @@ import FilterChip from "../../components/FilterChip";
 import { subjects, gradeLevels, areas, availabilityOptions } from "../../data/mockTutors";
 import { apiRequest } from "../../api/client";
 
-const TutorProfileSetupScreen = () => {
+const TutorProfileSetupScreen = ({ navigation }) => {
   const { userName, logout, user, updateCurrentUser } = useAuth();
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -114,6 +114,7 @@ const TutorProfileSetupScreen = () => {
       if (!canProceed()) return;
       try {
         await saveProfile();
+        navigation?.navigate?.("Dashboard");
       } catch (e) {
         console.error("Profile save failed:", e);
         alert(e?.message || "Failed to save profile");

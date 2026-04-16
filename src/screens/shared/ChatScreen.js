@@ -45,14 +45,14 @@ const ChatScreen = ({ route, navigation }) => {
   }, [isLoggedIn, conversationId]);
 
   const uiMessages = useMemo(() => {
-    const me = user?._id;
+    const meId = user?.id || user?._id;
     return messages.map((m) => ({
       id: m._id,
       text: m.content,
-      sender: m.senderId?.toString?.() === me?.toString?.() ? "user" : "other",
+      sender: m.senderId?.toString?.() === meId?.toString?.() ? "user" : "other",
       timestamp: m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : "",
     }));
-  }, [messages, user?._id]);
+  }, [messages, user?.id, user?._id]);
 
   const handleSend = async () => {
     if (!inputText.trim() || isSending) return;

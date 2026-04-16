@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useBooking } from "../../context/BookingContext";
 import AvatarInitials from "../../components/AvatarInitials";
@@ -57,9 +57,10 @@ const BookingScreen = ({ route, navigation }) => {
   };
 
   const canConfirm = Boolean(selectedDate && selectedTime);
+  const { height: windowHeight } = useWindowDimensions();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#F5F5F7" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#F5F5F7", height: windowHeight }}>
       {!tutor ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
           <Text style={{ fontSize: 16, fontWeight: "500", color: "#111827", marginBottom: 8 }}>
@@ -77,7 +78,12 @@ const BookingScreen = ({ route, navigation }) => {
         </View>
       ) : (
         <>
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 20 }}>
+          <ScrollView
+            style={{ flex: 1, overflow: 'scroll' }}
+            contentContainerStyle={{ padding: 16, paddingBottom: 120, flexGrow: 1 }}
+            scrollEnabled={true}
+            nestedScrollEnabled={true}
+            keyboardShouldPersistTaps="handled">
             <View
               style={{
                 backgroundColor: "#FFFFFF",

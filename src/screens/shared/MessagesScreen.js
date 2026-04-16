@@ -23,7 +23,7 @@ const MessagesScreen = ({ navigation }) => {
   }, [isLoggedIn]);
 
   const mapped = useMemo(() => {
-    const me = user?._id;
+    const me = user?.id || user?._id;
     return conversations.map((c) => {
       const other = Array.isArray(c.participants)
         ? c.participants.find((p) => (p?._id || p)?.toString?.() !== me?.toString?.())
@@ -46,7 +46,7 @@ const MessagesScreen = ({ navigation }) => {
         conversationId: c._id,
       };
     });
-  }, [conversations, user?._id]);
+  }, [conversations, user?.id, user?._id]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F5F5F7" }}>

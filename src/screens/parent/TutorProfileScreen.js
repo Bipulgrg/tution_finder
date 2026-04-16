@@ -7,6 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
+  useWindowDimensions,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTutor } from "../../context/TutorContext";
@@ -16,24 +18,42 @@ import FilterChip from "../../components/FilterChip";
 import { apiRequest } from "../../api/client";
 
 const TutorProfileScreen = ({ route, navigation }) => {
-  const { tutor } = route.params;
+  const tutor = route?.params?.tutor;
   const { toggleSaveTutor, isTutorSaved } = useTutor();
   const [reviews, setReviews] = useState([]);
   const [isStartingChat, setIsStartingChat] = useState(false);
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
 
-  const isSaved = isTutorSaved(tutor.id);
+  const isSaved = tutor?.id ? isTutorSaved(tutor.id) : false;
+
+  if (!tutor) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#F5F5F7", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <Text style={{ fontSize: 16, fontWeight: "500", color: "#111827", textAlign: "center", marginBottom: 12 }}>
+          Tutor not found
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ backgroundColor: "#6C3FCF", borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16 }}
+        >
+          <Text style={{ color: "#FFFFFF", fontWeight: "500" }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const handleBookNow = () => {
+    if (!tutor?.id) return;
     navigation.navigate("Booking", { tutor });
   };
 
   useEffect(() => {
+    if (!tutor?.id) return;
     apiRequest(`/api/reviews/tutor/${tutor.id}`, { method: "GET" })
       .then((res) => setReviews(Array.isArray(res?.data) ? res.data : []))
       .catch((e) => console.error("Error loading reviews:", e));
-  }, [tutor.id]);
+  }, [tutor?.id]);
 
   useEffect(() => {
     if (!tutor?.id) return;
@@ -52,7 +72,7 @@ const TutorProfileScreen = ({ route, navigation }) => {
     try {
       const res = await apiRequest("/api/messages/conversations", {
         method: "POST",
-        body: { otherUserId: tutor.id },
+        body: { otherUserId: tutor?.id },
       });
 
       const conversation = res?.data?.conversation;
@@ -76,9 +96,16 @@ const TutorProfileScreen = ({ route, navigation }) => {
     }
   };
 
+  const { height: windowHeight } = useWindowDimensions();
+
   return (
-    <View style={{ flex: 1, backgroundColor: "#F5F5F7" }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+    <View style={{ flex: 1, backgroundColor: "#F5F5F7", position: "relative", height: windowHeight }}>
+      <ScrollView
+        style={{ flex: 1, overflow: 'scroll' }}
+        contentContainerStyle={{ paddingBottom: 120, flexGrow: 1 }}
+        scrollEnabled={true}
+        nestedScrollEnabled={true}
+        keyboardShouldPersistTaps="handled">
         <View
           style={{
             backgroundColor: "#6C3FCF",
@@ -107,7 +134,7 @@ const TutorProfileScreen = ({ route, navigation }) => {
                   marginBottom: 4,
                 }}
               >
-                {tutor.education.degree} · {tutor.education.university}
+                {tutor.education?.degree || ""} · {tutor.education?.university || ""}
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <StarRating rating={tutor.rating} size={16} />
@@ -229,7 +256,7 @@ const TutorProfileScreen = ({ route, navigation }) => {
             Subjects & Grades
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 20 }}>
-            {tutor.subjects.map((subject) => (
+            {(tutor.subjects || []).map((subject) => (
               <FilterChip
                 key={subject}
                 label={subject}
@@ -322,7 +349,7 @@ const TutorProfileScreen = ({ route, navigation }) => {
             Availability
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 20 }}>
-            {tutor.availability.map((avail) => (
+            {(tutor.availability || []).map((avail) => (
               <View
                 key={avail}
                 style={{
@@ -501,6 +528,8 @@ const TutorProfileScreen = ({ route, navigation }) => {
           bottom: 0,
           left: 0,
           right: 0,
+          zIndex: 50,
+          elevation: 10,
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "#E5E7EB",
@@ -511,7 +540,7 @@ const TutorProfileScreen = ({ route, navigation }) => {
         }}
       >
         <TouchableOpacity
-          onPress={() => toggleSaveTutor(tutor.id)}
+          onPress={() => tutor?.id && toggleSaveTutor(tutor.id)}
           activeOpacity={0.8}
           style={{
             width: 56,
