@@ -71,8 +71,3 @@ npm start
 - Areas: Kathmandu, Lalitpur, Bhaktapur, Pokhara
 - Currency: NPR (Rs)
 - Nepali calendar date notation in bookings
-- Localized greeting: "Namaste"
-
-## License
-
-MIT
