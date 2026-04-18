@@ -5,14 +5,21 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "splash": {
-      "backgroundColor": "#6C3FCF"
-    },
+    "backgroundColor": "#6C3FCF",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourname.tuitionfinder"
     },
     "android": {
-      "backgroundColor": "#6C3FCF"
+      "package": "com.yourname.tuitionfinder"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5c9695cf-5159-49f5-98d5-f63f8588f6ff"
+      }
     }
   }
 }
