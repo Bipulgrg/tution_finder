@@ -10,6 +10,36 @@ A complete React Native tutor-parent matching platform for Nepal.
 - **Locations**: Kathmandu, Lalitpur, Bhaktapur, Pokhara, Online
 - **Currency**: Nepali Rupees (NPR)
 
+## Screenshots
+
+### Authentication
+
+| Login | Register |
+|:-----:|:--------:|
+| ![Login](./screenshots/login%20page.jpg) | ![Register](./screenshots/register%20page.jpg) |
+
+### Parent Flow
+
+| Home | Search Tutors | Saved Tutors |
+|:----:|:-------------:|:------------:|
+| ![Home](./screenshots/homepage.jpg) | ![Search](./screenshots/searchpage.jpg) | ![Saved](./screenshots/savedtutors.jpg) |
+
+| Tutor Profile | My Bookings | Write Review |
+|:-------------:|:-----------:|:------------:|
+| ![Profile](./screenshots/tutorprofile.jpg) | ![Bookings](./screenshots/bookings.jpg) | ![Review](./screenshots/review.jpg) |
+
+### Tutor Flow
+
+| Tutor Dashboard | Tutor Profile Setup |
+|:---------------:|:-------------------:|
+| ![Dashboard](./screenshots/tutorhome.jpg) | ![Profile 2](./screenshots/tutorprofile2.jpg) |
+
+### Shared Features
+
+| Messages |
+|:--------:|
+| ![Messages](./screenshots/message.jpg) |
+
 ## Tech Stack
 
 - React Native with Expo
